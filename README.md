@@ -15,3 +15,5 @@ git remote set-url --add --push origin Url/destination repo ( to change repos do
 git push / git push --set-upstream origin main
 
 git remote set-url origin git@github.com:ppreyer/first_app.git(adds repos which already exist)
+
+Three Branches Github , Origin , Upstream to delete anyone go git remote rm origin / github / Upstream
