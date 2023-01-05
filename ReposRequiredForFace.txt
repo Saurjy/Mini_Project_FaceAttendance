@@ -1,0 +1,7 @@
+sudo pip install cmake
+sudo pip install dlib
+pip3 install face_recognition
+pip install kivymd
+pip install opencv-python
+sudo apt-get install xclip xsel
+pip install imutils
