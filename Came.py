@@ -5,7 +5,6 @@ from kivy.uix.screenmanager import Screen,ScreenManager
 from kivymd.uix.textfield.textfield import MDTextField
 
 from imutils.video import VideoStream
-from imutils.video import FPS
 from imutils import paths
 import face_recognition
 import imutils
