@@ -3,8 +3,11 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.screenmanager import Screen,ScreenManager
 from kivymd.uix.textfield.textfield import MDTextField
+from kivymd.uix.label import MDLabel
+from kivy.uix.recycleview import RecycleView
 
 from imutils.video import VideoStream
+from imutils.video import FPS
 from imutils import paths
 import face_recognition
 import imutils
@@ -12,6 +15,7 @@ import pickle
 import time
 import cv2
 import os
+import datetime
 
 screen_helper = """
 ScreenManager:
@@ -19,6 +23,22 @@ ScreenManager:
         RecognitionScreen:
         RegistrationScreen:
         AttendanceScreen:
+
+<RV>:
+        viewclass: 'MDRectangleFlatButton'
+        orientation: "vertical"
+        spacing: 40
+        padding:10, 10
+        RecycleBoxLayout:
+                color:(0, 0.7, 0.4, 0.8)
+                default_size: None, dp(100)
+
+                # defines the size of the widget in reference to width and height
+                default_size_hint: 1, None 
+                size_hint_y: None
+                size_hint_x: 
+                height: self.minimum_height
+                orientation: 'vertical' # defines the orientation of data items
         
 <MenuScreen>
         name: 'Menu'
@@ -93,19 +113,37 @@ ScreenManager:
                 
 <AttendanceScreen>
         name: 'Attendance'
-        MDRectangleFlatButton:
-                text: 'Show Attendance'
-                pos_hint: {'center_x':0.5,'center_y':0.5}
-                
-        MDRectangleFlatButton:
-                text: 'Back'
-                pos_hint: {'center_x':0.5,'center_y':0.4}
-                on_press:
-                        root.manager.current = 'Menu'
-                        root.manager.transition.direction = "right" 
+        BoxLayout:
+                orientation: "vertical"
+                RV:
+                MDRectangleFlatButton:
+                        text: 'Back'
+                        pos_hint: {'center_x':0.5,'center_y':0.4}
+                        on_press:
+                                root.manager.current = 'Menu'
+                                root.manager.transition.direction = "right" 
 """
 class MenuScreen(Screen):               
         pass
+
+class RV(RecycleView):
+    def __init__(self, **kwargs):
+        super(RV, self).__init__(**kwargs)
+        x=[]
+        today = datetime.datetime.now()
+        filename ="Attendance_"+ today.strftime("%d_")+today.strftime("%m_")+today.strftime("%G")+".txt"
+        try:
+                f = open('%s' % filename, "r")
+                x = f.readlines()
+        except:
+                x.append("No File found")
+                x.append("Please Do Recognition Attendance ")
+                x.append("After attendance Rerun The app to see changes ")
+        self.data = [{'text': str(i)} for i in x]
+        try:
+                f.close()
+        except:
+                pass
 
 class AttendanceScreen(Screen):
         pass
@@ -151,7 +189,7 @@ class RegistrationScreen(Screen):
                 print (path)
                 cam = cv2.VideoCapture(0)
                 try: 
-                    os.mkdir(path) 
+                    os.makedirs(path) 
                 except OSError as error: 
                     print(error) 
 
@@ -189,12 +227,14 @@ class RecognitionScreen(Screen):
         def Face_rec(self):
                 currentname = "unknown"
                 encodingsP = "encodings.pickle"
-
+                today = datetime.datetime.now()
                 print("[INFO] loading encodings + face detector...")
                 data = pickle.loads(open(encodingsP, "rb").read())
-
+                filename ="Attendance_"+ today.strftime("%d_")+today.strftime("%m_")+today.strftime("%G")+".txt"
                 vs = VideoStream(src=0,framerate=10).start()
                 time.sleep(2.0)
+                attendance = {}
+                f = open('%s' % filename, "w")
 
                 while True:
                         frame = vs.read()
@@ -226,6 +266,11 @@ class RecognitionScreen(Screen):
                                         
                                         if currentname != name:
                                                 currentname = name
+                                                now = datetime.datetime.now()
+                                                dateStr = now.strftime("%Y-%m-%d %H:%M:%S")
+                                                timer = f" Date and time : {dateStr}\n"
+                                                if currentname not in attendance:
+                                                        attendance[currentname] = timer
                                                 print(currentname)
 
                               
@@ -241,15 +286,19 @@ class RecognitionScreen(Screen):
                                         .8, (0, 255, 255), 2)
 
                        
-                        cv2.imshow("Facial Recognition is Running", frame)
+                        cv2.imshow("Facial Recognition is Running Press q to Quit", frame)
                         key = cv2.waitKey(1) & 0xFF
 
                        
                         if key == ord("q"):
+                                for key, value in attendance.items():
+                                        f.write('%s :%s' % (key, value))
+                                #print(attendance)
                                 break
   
                 cv2.destroyAllWindows()
                 vs.stop()
+                f.close()
         pass
 
 sm = ScreenManager()
